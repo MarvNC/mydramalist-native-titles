@@ -2,7 +2,7 @@
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
 // @grant       none
-// @version     1.1
+// @version     1.11
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList
@@ -61,9 +61,9 @@ async function getNativeTitle(url) {
       console.error('No native title found for ' + url);
       return;
     }
-  } else {
+  } else if (dramaRegex.test(url)) {
     const detailsDiv = doc.querySelector('div.show-detailsxss');
-    const nativeTitleBold = [...detailsDiv.querySelectorAll('b.inline')].filter(
+    const nativeTitleBold = [...detailsDiv?.querySelectorAll('b.inline')].filter(
       (b) => b.textContent.trim() == 'Native Title:'
     );
     if (nativeTitleBold.length == 0) {

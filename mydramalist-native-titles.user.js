@@ -2,7 +2,7 @@
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
 // @grant       none
-// @version     1.0
+// @version     1.1
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList
@@ -11,42 +11,76 @@
 // ==/UserScript==
 
 let delayMs = 500;
-let titles = GM_getValue('nativeTitles', {});
+let nativeTitles = GM_getValue('nativeTitles', {});
+const staffRegex = /.+\bmydramalist\.com\/people\/\d+.+/;
+const dramaRegex = /.+\bmydramalist\.com\/\d+.+/;
 
 (async function () {
+  // replace the title for the current page if it's a drama or staff page
+  const nativeTitle = await getNativeTitle(document.URL);
+  if (nativeTitle) {
+    const titleElem = document.querySelector('h1');
+    titleElem.textContent = nativeTitle + ' | ' + titleElem.textContent;
+  }
+  // replace for all links on the page
   const titleAnchors = [...document.querySelectorAll('a.title')];
-  for (const titleAnchor of titleAnchors) {
+  const staffAnchors = [...document.querySelectorAll('a[href].text-primary')].filter((a) =>
+    staffRegex.test(a.href)
+  );
+  for (const titleAnchor of [...titleAnchors, ...staffAnchors]) {
     const url = titleAnchor.href;
     const nativeTitle = await getNativeTitle(url);
     if (nativeTitle) {
-      titleAnchor.textContent = nativeTitle + ' | ' + titleAnchor.textContent;
+      let textElem = titleAnchor;
+      if (titleAnchor.firstElementChild) textElem = titleAnchor.firstElementChild;
+      textElem.textContent = nativeTitle + ' | ' + textElem.textContent;
     }
   }
 })();
 
+/**
+ * Returns the native title from a drama or staff page.
+ * @param {string} url
+ * @returns the native title or null if not found
+ */
 async function getNativeTitle(url) {
-  if (titles[url]) {
-    return titles[url];
+  if (nativeTitles[url]) {
+    return nativeTitles[url];
   }
+  let nativeTitle;
   console.log('Fetching native title for ' + url);
   const doc = await getUrl(url);
-  const detailsDiv = doc.querySelector('div.show-detailsxss');
-  const nativeTitleBold = [...detailsDiv.querySelectorAll('b.inline')].filter(
-    (b) => b.textContent.trim() == 'Native Title:'
-  );
-  if (nativeTitleBold.length == 0) {
-    console.error('Native title not found', url);
-    return;
-  }
-  const nativeTitle = nativeTitleBold[0].nextElementSibling.textContent.trim();
-  if (!nativeTitle) {
-    console.error('Native title not found', url);
-    return;
+  if (staffRegex.test(url)) {
+    const detailsBox = [...doc.querySelectorAll('div.box-header.primary')].filter(
+      (div) => div.innerText == 'Details'
+    )[0]?.nextElementSibling;
+    nativeTitle = [...detailsBox.querySelectorAll('b.inline')]
+      .filter((b) => b.innerText === 'Native name:')[0]
+      ?.nextSibling.textContent.trim();
+    if (!nativeTitle) {
+      console.error('No native title found for ' + url);
+      return;
+    }
+  } else {
+    const detailsDiv = doc.querySelector('div.show-detailsxss');
+    const nativeTitleBold = [...detailsDiv.querySelectorAll('b.inline')].filter(
+      (b) => b.textContent.trim() == 'Native Title:'
+    );
+    if (nativeTitleBold.length == 0) {
+      console.error('Native title not found', url);
+      return;
+    }
+    nativeTitle = nativeTitleBold[0].nextElementSibling.textContent.trim();
+    if (!nativeTitle) {
+      console.error('Native title not found', url);
+      return;
+    }
   }
   console.log(`${url} - ${nativeTitle}`);
-  titles = GM_getValue('nativeTitles', {});
-  titles[url] = nativeTitle;
-  GM_setValue('nativeTitles', titles);
+  // store to storage
+  nativeTitles = GM_getValue('nativeTitles', {});
+  nativeTitles[url] = nativeTitle;
+  GM_setValue('nativeTitles', nativeTitles);
   return nativeTitle;
 }
 
@@ -56,6 +90,9 @@ async function getNativeTitle(url) {
  * @returns {Promise<Document>}
  */
 async function getUrl(url) {
+  if (url == document.URL) {
+    return document;
+  }
   let response = await fetch(url);
   let waitMs = delayMs;
   await timer(waitMs);

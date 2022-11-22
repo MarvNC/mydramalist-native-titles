@@ -2,7 +2,7 @@
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
 // @grant       none
-// @version     1.11
+// @version     1.2
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList
@@ -12,8 +12,8 @@
 
 let delayMs = 500;
 let nativeTitles = GM_getValue('nativeTitles', {});
-const staffRegex = /.+\bmydramalist\.com\/people\/\d+.+/;
-const dramaRegex = /.+\bmydramalist\.com\/\d+.+/;
+const staffRegex = /^https?:\/\/\bmydramalist\.com\/people\/\d+[^/]+$/;
+const dramaRegex = /^https?:\/\/\bmydramalist\.com\/\d+[^/]+$/;
 
 (async function () {
   // replace the title for the current page if it's a drama or staff page
@@ -23,17 +23,29 @@ const dramaRegex = /.+\bmydramalist\.com\/\d+.+/;
     titleElem.textContent = nativeTitle + ' | ' + titleElem.textContent;
   }
   // replace for all links on the page
-  const titleAnchors = [...document.querySelectorAll('a.title')];
+  const titleAnchors = [
+    ...document.querySelectorAll('a.title'),
+    ...document.querySelectorAll('.text-primary.title > a[href]'),
+    ...document.querySelectorAll('a[href].text-primary'),
+  ];
+  console.log(document.querySelectorAll('.episode-card-sm > a[href]'));
   const staffAnchors = [...document.querySelectorAll('a[href].text-primary')].filter((a) =>
     staffRegex.test(a.href)
   );
-  for (const titleAnchor of [...titleAnchors, ...staffAnchors]) {
+  // filter to unique links
+  const allTitleAnchors = Array.from(new Set([...titleAnchors, ...staffAnchors]));
+  console.log('Found ' + allTitleAnchors.length + ' title anchors');
+  console.log(allTitleAnchors.map((a) => a.href));
+  for (const titleAnchor of allTitleAnchors) {
     const url = titleAnchor.href;
     const nativeTitle = await getNativeTitle(url);
     if (nativeTitle) {
+      console.log('Replacing title for ' + url);
       let textElem = titleAnchor;
       if (titleAnchor.firstElementChild) textElem = titleAnchor.firstElementChild;
       textElem.textContent = nativeTitle + ' | ' + textElem.textContent;
+    } else {
+      console.log('No native title found for ' + url);
     }
   }
 })();
@@ -48,6 +60,9 @@ async function getNativeTitle(url) {
     return nativeTitles[url];
   }
   let nativeTitle;
+  if (!staffRegex.test(url) && !dramaRegex.test(url)) {
+    return;
+  }
   console.log('Fetching native title for ' + url);
   const doc = await getUrl(url);
   if (staffRegex.test(url)) {

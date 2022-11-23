@@ -1,6 +1,6 @@
 # MyDramaList Native Titles
 
-Displays the native title on titles of dramas and names of staff in MyDramaList.
+Displays the native name on titles of dramas and of staff on [MyDramaList](https://mydramalist.com/).
 
 [**Install**](https://github.com/MarvNC/mydramalist-native-titles/raw/master/mydramalist-native-titles.user.js)
 

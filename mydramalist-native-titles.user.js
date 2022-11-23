@@ -2,7 +2,7 @@
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
 // @grant       none
-// @version     1.2
+// @version     1.3
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList
@@ -28,27 +28,46 @@ const dramaRegex = /^https?:\/\/\bmydramalist\.com\/\d+[^/]+$/;
     ...document.querySelectorAll('.text-primary.title > a[href]'),
     ...document.querySelectorAll('a[href].text-primary'),
   ];
-  console.log(document.querySelectorAll('.episode-card-sm > a[href]'));
   const staffAnchors = [...document.querySelectorAll('a[href].text-primary')].filter((a) =>
     staffRegex.test(a.href)
   );
   // filter to unique links
-  const allTitleAnchors = Array.from(new Set([...titleAnchors, ...staffAnchors]));
+  const allTitleAnchors = Array.from(new Set([...titleAnchors, ...staffAnchors])).filter(
+    (anchor) => staffRegex.test(anchor.href) || dramaRegex.test(anchor.href)
+  );
   console.log('Found ' + allTitleAnchors.length + ' title anchors');
   console.log(allTitleAnchors.map((a) => a.href));
+
+  const notInCache = [];
+
+  // replace ones already in cache first
   for (const titleAnchor of allTitleAnchors) {
+    const nativeTitle = nativeTitles[titleAnchor.href];
+    if (nativeTitle) {
+      console.log(`Found ${titleAnchor.href} in cache`);
+      replaceTitle(titleAnchor, nativeTitle);
+    } else {
+      notInCache.push(titleAnchor);
+    }
+  }
+  console.log('Fetching ' + notInCache.length + ' titles not in cache');
+  for (const titleAnchor of notInCache) {
     const url = titleAnchor.href;
     const nativeTitle = await getNativeTitle(url);
+    console.log(`Got title for ${url} - ${nativeTitle}`);
     if (nativeTitle) {
-      console.log('Replacing title for ' + url);
-      let textElem = titleAnchor;
-      if (titleAnchor.firstElementChild) textElem = titleAnchor.firstElementChild;
-      textElem.textContent = nativeTitle + ' | ' + textElem.textContent;
+      replaceTitle(titleAnchor, nativeTitle);
     } else {
       console.log('No native title found for ' + url);
     }
   }
 })();
+
+function replaceTitle(titleAnchor, nativeTitle) {
+  let textElem = titleAnchor;
+  if (titleAnchor.firstElementChild) textElem = titleAnchor.firstElementChild;
+  textElem.textContent = nativeTitle + ' | ' + textElem.textContent;
+}
 
 /**
  * Returns the native title from a drama or staff page.
@@ -91,7 +110,6 @@ async function getNativeTitle(url) {
       return;
     }
   }
-  console.log(`${url} - ${nativeTitle}`);
   // store to storage
   nativeTitles = GM_getValue('nativeTitles', {});
   nativeTitles[url] = nativeTitle;

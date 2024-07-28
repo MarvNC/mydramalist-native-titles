@@ -2,18 +2,31 @@
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
 // @grant       none
-// @version     1.3
+// @version     1.4
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList
 // @grant       GM_setValue
 // @grant       GM_getValue
+// @grant       GM_registerMenuCommand
 // ==/UserScript==
 
+let showEnglishTitles = GM_getValue('showEnglishTitles', true);
 let delayMs = 500;
 let nativeTitles = GM_getValue('nativeTitles', {});
 const staffRegex = /^https?:\/\/\bmydramalist\.com\/people\/\d+[^/]+$/;
 const dramaRegex = /^https?:\/\/\bmydramalist\.com\/\d+[^/]+$/;
+
+// Register menu command to toggle showEnglishTitles
+GM_registerMenuCommand('Toggle English Titles', toggleEnglishTitles);
+
+function toggleEnglishTitles() {
+  showEnglishTitles = !showEnglishTitles;
+  GM_setValue('showEnglishTitles', showEnglishTitles);
+  alert(`English titles are now ${showEnglishTitles ? 'shown' : 'hidden'}`);
+  // Reload the page to apply changes
+  location.reload();
+}
 
 (async function () {
   // replace the title for the current page if it's a drama or staff page
@@ -66,7 +79,9 @@ const dramaRegex = /^https?:\/\/\bmydramalist\.com\/\d+[^/]+$/;
 function replaceTitle(titleAnchor, nativeTitle) {
   let textElem = titleAnchor;
   if (titleAnchor.firstElementChild) textElem = titleAnchor.firstElementChild;
-  textElem.textContent = nativeTitle + ' | ' + textElem.textContent;
+  englishTitle = textElem.textContent
+  textElem.textContent = nativeTitle;
+  if (showEnglishTitles) textElem.textContent += ' | ' + englishTitle;
 }
 
 /**

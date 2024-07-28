@@ -2,7 +2,7 @@
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
 // @grant       none
-// @version     1.3
+// @version     1.4
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList
@@ -10,6 +10,7 @@
 // @grant       GM_getValue
 // ==/UserScript==
 
+let showEnglishTitles = true;
 let delayMs = 500;
 let nativeTitles = GM_getValue('nativeTitles', {});
 const staffRegex = /^https?:\/\/\bmydramalist\.com\/people\/\d+[^/]+$/;
@@ -66,7 +67,9 @@ const dramaRegex = /^https?:\/\/\bmydramalist\.com\/\d+[^/]+$/;
 function replaceTitle(titleAnchor, nativeTitle) {
   let textElem = titleAnchor;
   if (titleAnchor.firstElementChild) textElem = titleAnchor.firstElementChild;
-  textElem.textContent = nativeTitle + ' | ' + textElem.textContent;
+  englishTitle = textElem.textContent
+  textElem.textContent = nativeTitle;
+  if (showEnglishTitles) textElem.textContent += ' | ' + englishTitle;
 }
 
 /**

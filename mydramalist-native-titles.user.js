@@ -2,7 +2,7 @@
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
 // @grant       none
-// @version     1.4
+// @version     1.4.1
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList
@@ -33,7 +33,9 @@ function toggleEnglishTitles() {
   const nativeTitle = await getNativeTitle(document.URL);
   if (nativeTitle) {
     const titleElem = document.querySelector('h1');
-    titleElem.textContent = nativeTitle + ' | ' + titleElem.textContent;
+    const englishTitle = titleElem.textContent;
+    titleElem.textContent = nativeTitle;
+    if (showEnglishTitles) titleElem.textContent += ' | ' + englishTitle;
   }
   // replace for all links on the page
   const titleAnchors = [
@@ -79,7 +81,7 @@ function toggleEnglishTitles() {
 function replaceTitle(titleAnchor, nativeTitle) {
   let textElem = titleAnchor;
   if (titleAnchor.firstElementChild) textElem = titleAnchor.firstElementChild;
-  englishTitle = textElem.textContent
+  const englishTitle = textElem.textContent
   textElem.textContent = nativeTitle;
   if (showEnglishTitles) textElem.textContent += ' | ' + englishTitle;
 }

@@ -2,7 +2,7 @@
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
 // @grant       none
-// @version     1.4.1
+// @version     1.4.2
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList

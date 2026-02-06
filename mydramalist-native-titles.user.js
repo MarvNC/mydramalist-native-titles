@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MyDramaList Native Titles
 // @match       https://mydramalist.com/*
-// @version     1.4.2
+// @version     1.4.3
 // @namespace   https://github.com/MarvNC
 // @author      Marv
 // @description Adds native titles to MyDramaList
